@@ -92,9 +92,13 @@ output$HelpTab <- renderPrint({
                   </ul>
                   "))),
                   bsCollapsePanel(h5("Output"),
-                    HTML(paste("The panel <span style='color:",AGEblue,"'><b> Model Dimension </b></span> gives an overview of the size of the model and the data used. Observations with missing values are omitted. The button <span style='color:",AGEblue,"'><b> Open Model Summary </b></span> opens a window containing the output from the R function 'summary()'. This summary should be checked in order to detect problems in the model fit (e.g. parameters that are NA).
-                    Finally, the panel <span style='color:",AGEblue,"'><b> Results </b></span> contains the test results, telling the user if a non-linear effect is needed or not. Specifically, the degrees of freedom of the test (DF), Chi^2-statistic and the p-value are reported together with a conclusion. The Null-Hypothesis of the test is, that the model contining a non-linear effect for a given variable is not significantly better than a model with a linear effect.
-                    The plot next to the test results shows the estimated non-linear fit and its 95% pointwise confidence interval. The location of the observations is marked by the black stripes at the bottom of the plot.")))
+                    HTML(paste("
+                    <ul>
+                    <li> The panel <span style='color:",AGEblue,"'><b> Model Dimension </b></span> gives an overview of the size of the model and the data used. Observations with missing values are omitted.
+                    <li> The button <span style='color:",AGEblue,"'><b> Open Model Summary </b></span> opens a window containing the output from the R function 'summary()'. This summary should be checked in order to detect problems in the model fit (e.g. parameters that are NA).
+                    <li> Finally, the panel <span style='color:",AGEblue,"'><b> Results </b></span> contains the test results, telling the user if a non-linear effect is needed or not. Specifically, the degrees of freedom of the test (DF), &chi;<sup>2</sup>-statistic and the p-value are reported together with a conclusion. The Null-Hypothesis of the test is, that the model contining a non-linear effect for a given variable is not significantly better than a model with a linear effect.
+                    The plot next to the test results shows the estimated non-linear fit and its 95% pointwise confidence interval. The location of the observations is marked by the black stripes at the bottom of the plot.
+                    </ul>")))
                   )
            )
     ),
