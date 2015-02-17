@@ -29,8 +29,8 @@ shinyUI(fluidPage(
                                      choices = list("linear" = "lin", "logistic" = "log",
                                                     "poisson" = "poi", "Cox" = "cox"),
                                      selected = "lin"),
-                        tags$style(type="text/css", HTML("#modType>*{float: left; margin-right: 15px;
-                                                         height: 20px;} #modType {height: 20px;}")),
+#                         tags$style(type="text/css", HTML("#modType>*{float: left; margin-right: 15px;
+#                                                          height: 20px;} #modType {height: 20px;}")),
 
                         br(),
                         h4("Model structure"),
