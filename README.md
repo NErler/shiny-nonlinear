@@ -1,9 +1,9 @@
 # shiny-nonlinear
 **shiny-nonlinear** is a tool to test if (one or more) predictor variables in a standard regression model have a
-non-linear relationship with the outcome, using natural splines.\
+non-linear relationship with the outcome, using natural splines.
 
 
-This app currently uses the packages *shinyBS*, *stringr*, *splines*, *foreign*, *survival* and *lmtest*.\
+This app currently uses the packages *shinyBS*, *stringr*, *splines*, *foreign*, *survival* and *lmtest*.
 
 Packages that are not installed will be automatically installed from within the app.
 
