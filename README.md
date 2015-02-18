@@ -17,7 +17,7 @@ if (!require("devtools"))
 devtools::install_github("rstudio/shiny")
 devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
 ```
-\
+
 
 To download and run this app directly you can use:
 ```r
