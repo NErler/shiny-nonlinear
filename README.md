@@ -1,13 +1,25 @@
 # shiny-nonlinear
-**shiny-nonlinear** is a tool to test if a predictor variable in a standard regression model should be modeled as a non-linear effect or if the relationship between that variable and the outcome is linear.
+**shiny-nonlinear** is a tool to test if (one or more) predictor variables in a standard regression model have a
+non-linear relationship with the outcome, using natural splines.\
 
-### This is a preliminary version and not yet complete!!!
 
-This app currently uses the packages *shinyBS*, *stringr*, *splines*, *foreign*, *survival* and *lmtest*.
+This app currently uses the packages *shinyBS*, *stringr*, *splines*, *foreign*, *survival* and *lmtest*.\
+
 Packages that are not installed will be automatically installed from within the app.
 
-For compatibility, shiny version 0.10.2.1 and shinyBS version 0.25 are needed. Shiny can be installed by using
-```r
-devtools::install_version("shiny", version = "0.10.2.1")
-```
+For this application to run without error, new versions of the packages *shiny* and *shinyBS* are needed. They can be
+downloaded from GitHub using the following code:
 
+```r
+if (!require("devtools"))
+  install.packages("devtools")
+
+devtools::install_github("rstudio/shiny")
+devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
+```
+\
+
+To download and run this app directly you can use:
+```r
+shiny::runGitHub("shiny-nonlinear", "NErler")
+```

@@ -1,4 +1,7 @@
+library(shiny)
 library(shinyBS) # this has to be here, doesn't work if loaded from server.R
+
+AGEblue <- "#004681"
 
 shinyUI(fluidPage(
 
@@ -8,7 +11,7 @@ shinyUI(fluidPage(
   ),
 
 
-  titlePanel(h1("Non-linear effects")),
+  titlePanel(HTML(paste("<span style='color:",AGEblue,"; font-weight:bold'> Non-linear effects <span>"))),
   tabsetPanel(
 
     # Tab: How this works...--------------------------------------------------------------------------------------------
@@ -21,23 +24,30 @@ shinyUI(fluidPage(
              fluidRow(
                column(4, # left column +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                       wellPanel(
-                        h4("Dataset"),
+                        radioButtons("inputType", h4("Dataset"), choices = list(".sav (SPSS)" = "sav", ".csv" = "csv"),
+                                     selected = "sav", inline=T),
+                        conditionalPanel(condition = "input.inputType == 'csv'",
+                                         fluidRow(
+                                         column(6,
+                                                selectInput("decsep", strong("decimal separator"), choices = list("comma", "dot"))
+                                                ),
+                                         column(6,
+                                                textInput("fieldsep", strong("field separator"), value="")
+                                                )
+                                         )),
                         fileInput("askData", label="", multiple=F),
 
-                        h4("Model type"),
-                        radioButtons("modType", "",
+                        radioButtons("modType", h4("Model type"),
                                      choices = list("linear" = "lin", "logistic" = "log",
                                                     "poisson" = "poi", "Cox" = "cox"),
-                                     selected = "lin"),
-#                         tags$style(type="text/css", HTML("#modType>*{float: left; margin-right: 15px;
-#                                                          height: 20px;} #modType {height: 20px;}")),
+                                     selected = "lin", inline=T),
 
                         br(),
                         h4("Model structure"),
 
-                        h5("Response"),
                         conditionalPanel(
                           condition = "input.modType == 'cox'",
+                          div(strong("Outcome")),
                           column(6, selectInput(inputId="CoxTime", 'Time variable',
                                                 choices = c(Choose=''), multiple=F)),
                           column(6, selectInput(inputId="CoxEvent", 'Event indicator',
@@ -47,20 +57,18 @@ shinyUI(fluidPage(
                           column(5,
                                  conditionalPanel(
                                    condition = "input.modType != 'cox'",
-                                   selectInput(inputId="outcome", '', choices = c(Choose=""), multiple=F)
+                                   selectInput(inputId="outcome", "Outcome", choices = c(Choose=""), multiple=F)
                                  )),
                           column(7,
                                  uiOutput("err.modelmisspecified")
                           )),
 
-                        h5("Covariates"),
                         uiOutput("err.resp_covar"),
                         uiOutput("err.covar_nonlin"),
-                        selectizeInput(inputId="covars", '', choices = list("Choose" = ""), multiple=T, width = '100%'),
+                        selectizeInput(inputId="covars", 'Covariates', choices = list("Choose" = ""), multiple=T, width = '100%'),
 
-                        h5("Nonlinear effect(s)"),
                         uiOutput("err.resp_nonlin"),
-                        selectizeInput(inputId="nonlin", '', choices = list("Choose" = ""), multiple=T, width = '100%'),
+                        selectizeInput(inputId="nonlin", 'Nonlinear effect(s)', choices = list("Choose" = ""), multiple=T, width = '100%'),
 
                         br(),
                         h4("Splines"),
@@ -70,32 +78,35 @@ shinyUI(fluidPage(
 
                column(8,  # right column +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                       fluidRow(
-                        column(6,
-                               h4("Model Dimension"),
-                               uiOutput("overfit")
-                        ),
-                        column(6,
-                               h4("Model Summary"),
-                               bsButton(inputId="moTrig", label="Open Model Summary", value=NULL, style = "primary"),
-                               bsModal("moMod", "Model Summary", trigger = "moTrig",
-                                       tags$head(
-                                         tags$style(HTML("
-                                             .modal{
-                                               width: 60%;
-                                               left: 20%;
-                                               margin-left:auto;
-                                               margin-right:auto;
-                                             }
-                                           "))), # end of tags$head
-                                       verbatimTextOutput("modsummary")
-                               )
-                        )
-                      ), # end of top row on right column
+                        column(12,
+                               h3("Model Dimension & Summary"),
+                               column(6,
+                                      uiOutput("overfit")
+                               ),
+                               column(6,
+                                      actionButton(inputId = "moTrig", "Open Model Summary", class = "btn-primary"),
 
-                      fluidRow(
-                               h4("Results:"),
+                                      bsModal(id = "moMod", title = "Model Summary", trigger = "moTrig", size="large",
+                                              #                                        tags$head(
+                                              #                                          tags$style(HTML("
+                                              #                                              .modal{
+                                              #                                                width: 60%;
+                                              #                                                left: 20%;
+                                              #                                                margin-left:auto;
+                                              #                                                margin-right:auto;
+                                              #                                              }
+                                              #                                            "))), # end of tags$head
+                                              verbatimTextOutput("modsummary")
+                                      ),
+                                      bsAlert("mainAlert") # need this for the modal to work. No idea why.
+                               )
+                        )), # end of top row on right column
+
+                      fluidRow(column(12,
+                               h3("Results:"),
+                               uiOutput("checkbox"),
                                uiOutput("table")
-                      )
+                      ))
                ) # end of right column
              ) # end of overall fluid row
     ), # end of tabPanel 'Test for non-linear effects'

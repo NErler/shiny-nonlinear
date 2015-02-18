@@ -8,11 +8,16 @@ OData <- reactive({
   if(is.null(ds))
     return(NULL)
 
-  if(length(grep(".sav", ds$name, fixed=T))){
+  if(input$inputType == "sav"){
+    library(foreign)
     Data <- read.spss(file=ds$datapath, to.data.frame=T)
-  }else{
-      Data <- read.csv2(file=ds$datapath)
   }
+
+  if(input$inputType == "csv"){
+    Data <- read.csv(file = ds$datapath, sep = input$fieldsep, dec = switch(input$decsep, "dot"=".", "comma"=","),
+                     stringsAsFactors = FALSE )
+  }
+  Data
 })
 
 
@@ -54,29 +59,31 @@ observe({
 })
 
 
+
 # Create sliders to select the df for each non-linear effect -----------------------------------------------------------
 output$sliders <- renderUI({
   numSl <- length(input$nonlin)
-  if(numSl > 0){
+  if (numSl > 0) {
     fluidRow(
       column(6,
-             lapply(1:ceiling(numSl/2), function(i){
-               sliderInput(paste("dfSlider", i, sep=""), paste("df for", input$nonlin[i]), min=1, max=8, value=3)
-             }
-             )
+             lapply(1:ceiling(numSl/2), function(i) {
+               sliderInput(paste("dfSlider", i, sep = ""),
+                           paste("df for", input$nonlin[i]), min = 1, max = 4, value = 3)
+             })
       ),
       column(6,
-             if(numSl >1){
-               lapply(min(numSl, ceiling(numSl/2)+1):numSl, function(i){
-                 sliderInput(paste("dfSlider", i, sep=""), paste("df for", input$nonlin[i]), min=1, max=8, value=3)
-               }
-               )
+             if (numSl > 1) {
+               lapply(min(numSl, ceiling(numSl/2) + 1):numSl, function(i) {
+                 sliderInput(paste("dfSlider", i, sep = ""),
+                             paste("df for", input$nonlin[i]), min = 1, max = 4, value = 3)
+               })
              }
+             )
       )
-    )
-  }else{"No non-linear effect(s) selected."}
+  } else {
+    "No non-linear effect(s) selected."
+  }
 })
-
 
 # built non-linear predictor -------------------------------------------------------------------------------------------
 
@@ -286,6 +293,11 @@ helpfunc <- function(k){
          ylim = trans()(range(c(fitCI()[[k]][,c("lwr", "upr")]))),
          xlim = range(Data()[,input$nonlin[k]]) + c(0.03,-0.03)*diff(range(Data()[,input$nonlin[k]])),
          cex.lab=1, bg="transparent")
+
+    if(input$plotKnots){
+      abline(v=quantile(Data()[, input$nonlin[k]], c(0.05, c(1:(dfList()[[k]]-1))/dfList()[[k]], 0.95)), col=grey(0.5), lty=2)
+    }
+
     polygon(c(fitCI()[[k]][,input$nonlin[k]], fitCI()[[k]][200:1, input$nonlin[k]]),
             trans()(c(fitCI()[[k]][,"lwr"], fitCI()[[k]][200:1, "upr"])),
             col="lightsteelblue1", border=NA)
@@ -319,10 +331,6 @@ output$overfit <- renderUI({
     HTML(paste(
     "<table>
       <tr>
-      <td><b> Number of coefficients:</b></td>
-      <td style='text-align:right'>", length(model()$coef), "</td>
-      </tr>
-      <tr>
       <td><b> Number of observations:</b></td>
       <td style='text-align:right'> N=", nobs(model(), use.fallback=T), "</td>
       </tr>",
@@ -341,9 +349,20 @@ output$overfit <- renderUI({
     if(input$modType=="cox"){floor(model()$nevent/10)},"
       </td>
       </tr>
+      <tr>
+      <td><b> Number of coefficients:</b></td>
+      <td style='text-align:right'>", length(model()$coef), "</td>
+      </tr>
     <table>
     "
   , sep="")))
+})
+
+
+output$checkbox <- renderUI({
+  if(!any(length(input$nonlin)<1, input$outcome=="")){
+    checkboxInput("plotKnots", "display location of knots", value=FALSE)
+  }
 })
 
 
@@ -412,25 +431,4 @@ output$table <- renderUI({
       )) # end of wellPanel & fluidRow
   }) # end of lapply
 }) # end of renderUI
-
-# alternative panel ----------------------------------------------------------------------------------------------------
-output$bs <- renderUI({
-  HTML(paste('
-<div class="mycontainer">
-    <div class="myheader">
-        header
-    </div>
-    <div class="mymainbody">
-        main body
-    <table class="res">
-    <tr>
-    <td> test </td>
-    <td> test </td>
-    </tr>
-    </table>
-    <p class="contact-msg"> This is a message </p>
-    </div>
-</div>
-       '))
-})
 

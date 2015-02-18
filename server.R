@@ -1,14 +1,12 @@
 # check if necessary packages are installed and install if not
-list.of.packages <- c("shiny", "shinyBS", "stringr", "splines", "foreign", "survival", "lmtest")
+list.of.packages <- c("stringr", "splines", "foreign", "survival", "lmtest")
+
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
-if(packageVersion("shinyBS")!="0.25"){
-  devtools::install_github("ebailey78/shinyBS", ref = "working")
-}
 
 # load packages
-lapply(list.of.packages, require, character.only=T)
+lapply(list.of.packages, require, character.only = T)
 
 
 # define ErasmusAGE colors

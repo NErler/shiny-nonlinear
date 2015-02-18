@@ -16,6 +16,8 @@ output$message <- renderUI({
 
   HTML(paste(
     "<h4> The dataset you loaded contains the following variables: </h4>
+    <p class='contact-msg'><b> If categorical variables have not been imported correctly please set
+    the levels appropriately (e.g. in SPSS)</b></p><br>
     <table class='data-table'>
     <tr> <th> variable name </th>
          <th> measurement level </th>
@@ -27,8 +29,7 @@ output$message <- renderUI({
             '<td> ', paste(levs[[i]], collapse=", "), '</td>',
             '</tr>')}), collapse=""),
     "</table>"),
-    "<p class='contact-msg'><b> If categorical variables have not been imported correctly please set
-    the levels appropriately (e.g. in SPSS)</b></p><br><br>")
+"<br>")
 
 })
 
