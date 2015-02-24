@@ -9,8 +9,8 @@ validModel <- reactive({
     if(input$modType=="poi"){sum(OData()[,input$outcome] != round(as.numeric(OData()[,input$outcome])), na.rm=T)>0},
     if(input$modType=="lin"){is.factor(OData()[,input$outcome])},
       if(input$modType=="cox"){
-        any(length(table(OData()[,input$CoxEvent]))!=2,
-            is.factor(OData()[,input$CoxEvent]))
+        any(length(table(OData()[,input$CoxEvent]))!=2
+            )
       }
       )
 })

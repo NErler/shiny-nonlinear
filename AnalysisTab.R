@@ -104,7 +104,7 @@ nonlinpred <- reactive({
 
 # model formula --------------------------------------------------------------------------------------------------------
 fmla <- reactive({
-  if(input$outcome =="")return(NULL)
+  if(!any(input$outcome !="", (input$CoxEvent !="" & input$CoxTime != "")))return(NULL)
 
   # if no covariates are selected (linear or non-linear), set only an intercept
   pred <- if(length(nonlinpred()) + length(input$covars)<1){
@@ -116,7 +116,7 @@ fmla <- reactive({
 
   # combine left and right part of the model formula
   if(input$modType == "cox"){
-    paste("Surv(time=", input$CoxTime, ", event=", input$CoxEvent, ") ~ ", pred, sep="")
+    paste("Surv(time=", input$CoxTime, ", event = as.numeric(", input$CoxEvent, ")) ~ ", pred, sep="")
   }else{
     paste(input$outcome, "~", pred)
   }
@@ -138,6 +138,7 @@ fam <- reactive({
 })
 
 
+
 model <- reactive({
   if (is.null(validModel()))
     return(NULL)
@@ -155,6 +156,8 @@ model <- reactive({
     }
   }
 })
+
+
 
 output$modsummary <- renderPrint({
   if (!is.null(model()))
@@ -200,7 +203,7 @@ get.DF <- function(nlin, Dat, form) {
   # set numerical variables to their median
   numvars <- unlist(lapply(DF, is.numeric))
   if (sum(numvars) > 0) {
-    DF[, numvars] <- rep(apply(DF[, unlist(lapply(DF, is.numeric))], 2, median, na.rm = T), each = nrow(DF))
+    DF[, numvars] <- rep(apply(DF[, unlist(lapply(DF, is.numeric)), drop=F], 2, median, na.rm = T), each = nrow(DF))
   }
 
   # set categorical variables to their reference category
@@ -360,7 +363,7 @@ output$overfit <- renderUI({
 
 
 output$checkbox <- renderUI({
-  if(!any(length(input$nonlin)<1, input$outcome=="")){
+  if(all(length(input$nonlin) > 0, any(input$outcome != "", (input$CoxTime != "" & input$CoxEvent != "")))){
     checkboxInput("plotKnots", "display location of knots", value=FALSE)
   }
 })
