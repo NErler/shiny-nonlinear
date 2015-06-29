@@ -30,7 +30,6 @@ output$HelpTab <- renderPrint({
                br()),
              column(6,
              h4("Instructions"),
-             bsCollapse(multiple=T, id="collapse1",
                         bsCollapsePanel(
                           h5("Data"),
                           HTML(
@@ -121,7 +120,6 @@ output$HelpTab <- renderPrint({
                               "</ul>")
                             )
                           )
-             )
            ))
     ),
     column(2)
