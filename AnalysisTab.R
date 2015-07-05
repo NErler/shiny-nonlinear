@@ -235,9 +235,7 @@ get.fitCI <- function(nonlin, mod, Dat, form, predx=NULL) {
   L <- as.list(nonlin)
   for (i in 1:length(nonlin)) {
     DF <- get.DF(nonlin[i], Dat, form, predx=predx)
-    cat("str(DF):", str(DF), "\n")
     predCI <- predict(mod, DF, se.fit = T, type = type)
-    cat("str(predCI):", str(predCI), "\n")
     predCI$lwr <- predCI$fit - 1.96 * predCI$se.fit
     predCI$upr <- predCI$fit + 1.96 * predCI$se.fit
     L[[i]] <- cbind(DF, predCI)
@@ -315,8 +313,6 @@ helpfunc <- function(k){
             trans()(c(fitCI()[[k]][,"lwr"], fitCI()[[k]][200:1, "upr"])),
             col="lightsteelblue1", border=NA)
     if(input$plotResid){
-      cat("length(residuals):", head(residuals(model())), "\n")
-      cat("str(fit):", head(get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"]), "\n")
       points(Data()[,input$nonlin[k]],
              residuals(model()) + get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"],
       col=grey(0.7), cex=0.2)
