@@ -21,5 +21,5 @@ devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
 
 To download and run this app directly you can use:
 ```r
-shiny::runGitHub("shiny-nonlinear", "NErler", "residuals")
+shiny::runGitHub("shiny-nonlinear", "NErler")
 ```
