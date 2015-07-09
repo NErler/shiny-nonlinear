@@ -24,7 +24,7 @@ output$err.modelmisspecified <- renderUI({
       <table class='warning'>
         <tr>
         <td><img src='Warning.png' style='width:60px;height:50px'></td>
-        <td> The selected response variable doesn't match the selected model type.</td>
+        <td> The selected response variable does not match the selected model type.</td>
         </tr>
        </table>", sep=''))
     }

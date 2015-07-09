@@ -114,9 +114,11 @@ output$HelpTab <- renderPrint({
                                     better than a model with a linear effect.",
                               "<li> The <span style='color:",AGEblue,"'> plot </span> next to the test results shows
                                     the estimated effect and its 95% confidence band. The black stripes at the bottom
-                                    of the plot mark the location of the observations. The locations of the knots can
-                                    be added to the plot as dashed vertical lines by checking the box at the top of the
-                                    panel.",
+                                    of the plot mark the location of the observations.",
+                              "<li> The locations of the knots can be added to the plot as dashed vertical lines by
+                                    checking the (left) box at the top of the panel. For continuous outcomes, partial
+                                    residuals can be displayed (by checking the right box at the top of the panel).
+                                    This will change the range of the y-axis.",
                               "</ul>")
                             )
                           )

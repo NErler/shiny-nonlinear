@@ -197,7 +197,7 @@ set.to.ref <- function(x) {
 }
 
 # get data frame for prediction (for CIs)
-get.DF <- function(nlin, Dat, form) {
+get.DF <- function(nlin, Dat, form, predx=NULL) {
   DF <- get_all_vars(form, Dat)
 
   # set numerical variables to their median
@@ -210,18 +210,23 @@ get.DF <- function(nlin, Dat, form) {
   if (sum(!numvars) > 0) {
     DF[, !numvars] <- unlist(lapply(DF[, unlist(lapply(DF, is.factor))], set.to.ref))
   }
-  DF <- DF[1:200, ]
 
-  predx <- seq(from = min(Dat[, nlin], na.rm = T) - 0.01 * abs(diff(range(Dat[, nlin], na.rm = T))),
+  if(is.null(predx)){
+    DF <- DF[1:200, ]
+    predx <- seq(from = min(Dat[, nlin], na.rm = T) - 0.01 * abs(diff(range(Dat[, nlin], na.rm = T))),
                to = max(Dat[, nlin], na.rm = T) + 0.01 * abs(diff(range(Dat[, nlin], na.rm = T))),
                length.out = 200)
+  }else{
+    DF <- DF[1:nrow(Dat[, nlin, drop=F]), ]
+    predx <- Dat[, nlin]
+  }
   DF[, nlin] <- predx
   return(DF)
 }
 
 
 # function to predict fit & get CIs
-get.fitCI <- function(nonlin, mod, Dat, form) {
+get.fitCI <- function(nonlin, mod, Dat, form, predx=NULL) {
   type <- if (input$modType == "cox") {
     "lp"
   } else {
@@ -229,7 +234,7 @@ get.fitCI <- function(nonlin, mod, Dat, form) {
   }
   L <- as.list(nonlin)
   for (i in 1:length(nonlin)) {
-    DF <- get.DF(nonlin[i], Dat, form)
+    DF <- get.DF(nonlin[i], Dat, form, predx=predx)
     predCI <- predict(mod, DF, se.fit = T, type = type)
     predCI$lwr <- predCI$fit - 1.96 * predCI$se.fit
     predCI$upr <- predCI$fit + 1.96 * predCI$se.fit
@@ -255,7 +260,6 @@ myheight <- function(){
   if(is.null(input$nonlin)){
     return(100)
   }else{
-#     return(floor(sqrt(length(input$nonlin)))*350)
     return(length(input$nonlin)*300)
   }
 }
@@ -280,7 +284,6 @@ ylab <- reactive({
          "poi" = paste("log(f(", nlin, "))", sep=""),
          "cox" = paste("log(Hazard ratio)", sep="")
          )
-#     return(M[[x]])
       return(paste("f(", nlin, ")", sep=""))
   }
 })
@@ -291,9 +294,14 @@ helpfunc <- function(k){
   if(length(input$nonlin)<1 | is.null(model())){
     return("Please select variables to be fitted with splines.")
   }else{
-    par(mfrow = c(1,1), mar=c(4, 4, 0.1, 0.1), bg="transparent")
+    if(input$plotResid){
+      yrange <- range(residuals(model()) + trans()(fitCI()[[k]][,"fit"]))
+    }else{
+      yrange <- trans()(range(c(fitCI()[[k]][,c("lwr", "upr")])))
+    }
+    par(mfrow = c(1,1), mar=c(4.3, 4, 0.1, 0.1), bg="transparent")
     plot(1, type="n", xlab=input$nonlin[k], ylab=ylab()(input$modType, input$nonlin[k]),
-         ylim = trans()(range(c(fitCI()[[k]][,c("lwr", "upr")]))),
+         ylim = yrange,
          xlim = range(Data()[,input$nonlin[k]]) + c(0.03,-0.03)*diff(range(Data()[,input$nonlin[k]])),
          cex.lab=1, bg="transparent")
 
@@ -304,9 +312,14 @@ helpfunc <- function(k){
     polygon(c(fitCI()[[k]][,input$nonlin[k]], fitCI()[[k]][200:1, input$nonlin[k]]),
             trans()(c(fitCI()[[k]][,"lwr"], fitCI()[[k]][200:1, "upr"])),
             col="lightsteelblue1", border=NA)
+    if(input$plotResid){
+      points(Data()[,input$nonlin[k]],
+             residuals(model()) + get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"],
+      col=grey(0.7), cex=0.2)
+    }
     lines(fitCI()[[k]][,input$nonlin[k]], trans()(fitCI()[[k]][,"fit"]), lwd=3, col=AGEblue)#"royalblue4")
     axis(side=1, at=Data()[,input$nonlin[k]], tck=0.02, labels=F)
-    box(which = "plot")
+    box(which = "plot", bg="transparent")
   }
 }
 
@@ -317,7 +330,7 @@ observe(
     local({
       myi <- i
       plotname <- paste("plot", myi, sep="")
-      output[[plotname]] <- renderPlot(.myplot(), height=300)
+      output[[plotname]] <- renderPlot(.myplot(), height=300, bg = "transparent")
 
       .myplot <- reactive(helpfunc(k=myi))
     })
@@ -362,12 +375,17 @@ output$overfit <- renderUI({
 })
 
 
-output$checkbox <- renderUI({
+output$checkbox1 <- renderUI({
   if(all(length(input$nonlin) > 0, any(input$outcome != "", (input$CoxTime != "" & input$CoxEvent != "")))){
     checkboxInput("plotKnots", "display location of knots", value=FALSE)
   }
 })
 
+output$checkbox2 <- renderUI({
+  if(all(length(input$nonlin) > 0, any(input$outcome != "", (input$CoxTime != "" & input$CoxEvent != "")), input$modType=="lin")){
+    checkboxInput("plotResid", "display partial residuals", value=FALSE)
+  }
+})
 
 # LR test results ------------------------------------------------------------------------------------------------------
 output$table <- renderUI({

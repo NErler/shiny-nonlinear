@@ -104,7 +104,8 @@ shinyUI(fluidPage(
 
                       fluidRow(column(12,
                                h3("Results:"),
-                               uiOutput("checkbox"),
+                               fluidRow(column(6, uiOutput("checkbox1")),
+                                        column(6, uiOutput("checkbox2"))),
                                uiOutput("table")
                       ))
                ) # end of right column
