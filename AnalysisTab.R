@@ -294,8 +294,10 @@ helpfunc <- function(k){
   if(length(input$nonlin)<1 | is.null(model())){
     return("Please select variables to be fitted with splines.")
   }else{
-    if(input$plotResid){
-      yrange <- range(residuals(model()) + trans()(fitCI()[[k]][,"fit"]))
+    if(input$modType == "lin"){
+      if(input$plotResid){
+        yrange <- range(residuals(model()) + trans()(fitCI()[[k]][,"fit"]))
+      }else{yrange <- trans()(range(c(fitCI()[[k]][,c("lwr", "upr")])))}
     }else{
       yrange <- trans()(range(c(fitCI()[[k]][,c("lwr", "upr")])))
     }
@@ -312,10 +314,12 @@ helpfunc <- function(k){
     polygon(c(fitCI()[[k]][,input$nonlin[k]], fitCI()[[k]][200:1, input$nonlin[k]]),
             trans()(c(fitCI()[[k]][,"lwr"], fitCI()[[k]][200:1, "upr"])),
             col="lightsteelblue1", border=NA)
-    if(input$plotResid){
-      points(Data()[,input$nonlin[k]],
-             residuals(model()) + get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"],
-      col=grey(0.7), cex=0.2)
+    if(input$modType == "lin"){
+      if(input$plotResid){
+        points(Data()[,input$nonlin[k]],
+               residuals(model()) + get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"],
+               col=grey(0.7), cex=0.2)
+      }
     }
     lines(fitCI()[[k]][,input$nonlin[k]], trans()(fitCI()[[k]][,"fit"]), lwd=3, col=AGEblue)#"royalblue4")
     axis(side=1, at=Data()[,input$nonlin[k]], tck=0.02, labels=F)
@@ -383,7 +387,7 @@ output$checkbox1 <- renderUI({
 
 output$checkbox2 <- renderUI({
   if(all(length(input$nonlin) > 0, any(input$outcome != "", (input$CoxTime != "" & input$CoxEvent != "")), input$modType=="lin")){
-    checkboxInput("plotResid", "display partial residuals", value=FALSE)
+    checkboxInput("plotResid", "display partial residuals", value=TRUE)
   }
 })
 
