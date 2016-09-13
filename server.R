@@ -1,5 +1,6 @@
 # check if necessary packages are installed and install if not
-list.of.packages <- c("stringr", "splines", "foreign", "survival", "lmtest")
+list.of.packages <- c("stringr", "splines", "foreign", "survival", "lmtest",
+                      "shinyBS")
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
