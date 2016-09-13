@@ -1,3 +1,6 @@
+if (!"shinyBS" %in% installed.packages()[, "Package"]) {
+  install.packages("shinyBS")
+}
 library(shiny)
 library(shinyBS) # this has to be here, doesn't work if loaded from server.R
 
