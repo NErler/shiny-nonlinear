@@ -1,6 +1,6 @@
-if (!"shinyBS" %in% installed.packages()[, "Package"]) {
-  install.packages("shinyBS")
-}
+# if (!"shinyBS" %in% installed.packages()[, "Package"]) {
+#   install.packages("shinyBS")
+# }
 library(shiny)
 library(shinyBS) # this has to be here, doesn't work if loaded from server.R
 
@@ -32,10 +32,11 @@ shinyUI(fluidPage(
                         conditionalPanel(condition = "input.inputType == 'csv'",
                                          fluidRow(
                                          column(6,
-                                                selectInput("decsep", strong("decimal separator"), choices = list("comma", "dot"))
+                                                selectInput("decsep", strong("decimal separator"),
+                                                            choices = list("dot", "comma"))
                                                 ),
                                          column(6,
-                                                textInput("fieldsep", strong("field separator"), value="")
+                                                textInput("fieldsep", strong("field separator"), value = ",")
                                                 )
                                          )),
                         fileInput("askData", label="", multiple=F),

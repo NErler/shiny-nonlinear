@@ -2,20 +2,22 @@
 # Analysis Tab Server File #
 #++++++++++++++++++++++++++#
 
+source("functions.R")
 # load Data-------------------------------------------------------------------------------------------------------------
 OData <- reactive({
   ds <- input$askData
-  if(is.null(ds))
+  if (is.null(ds))
     return(NULL)
 
-  if(input$inputType == "sav"){
+  if (input$inputType == "sav") {
     library(foreign)
-    Data <- read.spss(file=ds$datapath, to.data.frame=T)
+    Data <- read.spss(file = ds$datapath, to.data.frame = T)
   }
 
-  if(input$inputType == "csv"){
-    Data <- read.csv(file = ds$datapath, sep = input$fieldsep, dec = switch(input$decsep, "dot"=".", "comma"=","),
-                     stringsAsFactors = FALSE )
+  if (input$inputType == "csv") {
+    Data <- read.csv(file = ds$datapath, sep = input$fieldsep,
+                     dec = switch(input$decsep, "dot" = ".", "comma" = ","),
+                     stringsAsFactors = T )
   }
   Data
 })
@@ -23,7 +25,7 @@ OData <- reactive({
 
 # Update the data input options ----------------------------------------------------------------------------------------
 VNames <- reactive({
-  if(is.null(OData())){return(NULL)}
+  if (is.null(OData())) {return(NULL)}
   VNames <- as.list(colnames(OData()))
   names(VNames) = VNames
   VNames
@@ -31,20 +33,24 @@ VNames <- reactive({
 
 # Update options to select the response variable
 observe({
-  updateSelectInput(session, inputId="outcome", choices = c(Choose="", VNames()))
+  updateSelectInput(session, inputId = "outcome",
+                    choices = c(Choose = "", VNames()))
 })
 
 # Update options to select time and event variables for Cox-model
 observe({
-  updateSelectInput(session, inputId="CoxTime", choices = c(Choose="", VNames()))
+  updateSelectInput(session, inputId = "CoxTime",
+                    choices = c(Choose = "", VNames()))
 })
 observe({
-  updateSelectInput(session, inputId="CoxEvent", choices = c(Choose="", VNames()))
+  updateSelectInput(session, inputId = "CoxEvent",
+                    choices = c(Choose = "", VNames()))
 })
 
 # Update options to select the (linear) covariates
 observe({
-  updateSelectizeInput(session, inputId="covars", choices = VNames())
+  updateSelectizeInput(session, inputId = "covars",
+                       choices = VNames())
 })
 
 # vector indicating which variables are coded as numeric and are not in the covariates vector
@@ -55,7 +61,8 @@ nonlincand <- reactive({
 
 # Update options to select non-linear covariates
 observe({
-  updateSelectizeInput(session, inputId="nonlin", choices = VNames()[nonlincand()])
+  updateSelectizeInput(session, inputId = "nonlin",
+                       choices = VNames()[nonlincand()])
 })
 
 
@@ -68,14 +75,16 @@ output$sliders <- renderUI({
       column(6,
              lapply(1:ceiling(numSl/2), function(i) {
                sliderInput(paste("dfSlider", i, sep = ""),
-                           paste("df for", input$nonlin[i]), min = 1, max = 4, value = 3)
+                           paste("df for", input$nonlin[i]),
+                           min = 1, max = 4, value = 1)
              })
       ),
       column(6,
              if (numSl > 1) {
                lapply(min(numSl, ceiling(numSl/2) + 1):numSl, function(i) {
                  sliderInput(paste("dfSlider", i, sep = ""),
-                             paste("df for", input$nonlin[i]), min = 1, max = 4, value = 3)
+                             paste("df for", input$nonlin[i]),
+                             min = 1, max = 4, value = 1)
                })
              }
              )
@@ -95,10 +104,12 @@ dfList <- reactive({
 
 # built non-linear part of the predictor
 nonlinpred <- reactive({
-  if(length(input$nonlin)<1)return(NULL)
-  bkn <- lapply(lapply(OData()[,input$nonlin, drop=F], quantile, c(0.05, 0.95), na.rm=T), round, 2)
-  bkn <- unlist(lapply(bkn, paste, collapse=", "))
-  paste("ns(", input$nonlin,", df=", unlist(dfList()),", Boundary.knots = c(",bkn,"))", sep="")
+  if (length(input$nonlin) < 1) return(NULL)
+  bkn <- lapply(lapply(OData()[,input$nonlin, drop = F], quantile,
+                       c(0.05, 0.95), na.rm = T), round, 2)
+  bkn <- unlist(lapply(bkn, paste, collapse = ", "))
+  paste("ns(", input$nonlin,", df = ", unlist(dfList()),
+        ", Boundary.knots = c(", bkn, "))", sep = "")
 })
 
 
@@ -126,15 +137,18 @@ fmla <- reactive({
 # Dataset with selected variables---------------------------------------------------------------------------------------
 Data <- reactive({
   D <- get_all_vars(as.formula(fmla()), OData())
-  D <- D[complete.cases(D), , drop=F]
+  D <- D[complete.cases(D), , drop = F]
   D
 })
 
 
 # original model -------------------------------------------------------------------------------------------------------
 fam <- reactive({
-  switch(input$modType, "lin" = "gaussian", "log" = binomial(link = 'logit'),
-         "poi" = poisson(link = 'log'), "cox" = "")
+  switch(input$modType,
+         "lin" = "gaussian",
+         "log" = binomial(link = 'logit'),
+         "poi" = poisson(link = 'log'),
+         "cox" = "")
 })
 
 
@@ -190,153 +204,61 @@ model2 <- reactive({
 
 
 # predict non-linear fit & CIs -----------------------------------------------------------------------------------------
-
-# function to set reference category (?)
-set.to.ref <- function(x) {
-  factor(rep(levels(x)[1], length(x)), levels = levels(x))
-}
-
-# get data frame for prediction (for CIs)
-get.DF <- function(nlin, Dat, form, predx=NULL) {
-  DF <- get_all_vars(form, Dat)
-
-  # set numerical variables to their median
-  numvars <- unlist(lapply(DF, is.numeric))
-  if (sum(numvars) > 0) {
-    DF[, numvars] <- rep(apply(DF[, unlist(lapply(DF, is.numeric)), drop=F], 2, median, na.rm = T), each = nrow(DF))
-  }
-
-  # set categorical variables to their reference category
-  if (sum(!numvars) > 0) {
-    DF[, !numvars] <- unlist(lapply(DF[, unlist(lapply(DF, is.factor))], set.to.ref))
-  }
-
-  if(is.null(predx)){
-    DF <- DF[1:200, ]
-    predx <- seq(from = min(Dat[, nlin], na.rm = T) - 0.01 * abs(diff(range(Dat[, nlin], na.rm = T))),
-               to = max(Dat[, nlin], na.rm = T) + 0.01 * abs(diff(range(Dat[, nlin], na.rm = T))),
-               length.out = 200)
-  }else{
-    DF <- DF[1:nrow(Dat[, nlin, drop=F]), ]
-    predx <- Dat[, nlin]
-  }
-  DF[, nlin] <- predx
-  return(DF)
-}
-
-
-# function to predict fit & get CIs
-get.fitCI <- function(nonlin, mod, Dat, form, predx=NULL) {
-  type <- if (input$modType == "cox") {
-    "lp"
-  } else {
-    "link"
-  }
-  L <- as.list(nonlin)
-  for (i in 1:length(nonlin)) {
-    DF <- get.DF(nonlin[i], Dat, form, predx=predx)
-    predCI <- predict(mod, DF, se.fit = T, type = type)
-    predCI$lwr <- predCI$fit - 1.96 * predCI$se.fit
-    predCI$upr <- predCI$fit + 1.96 * predCI$se.fit
-    L[[i]] <- cbind(DF, predCI)
-  }
-  return(L)
-}
-
-
 fitCI <- reactive({
   if (length(input$nonlin) < 1)
     return(NULL)
   if (is.null(model()))
     return(NULL)
-  get.fitCI(input$nonlin, model(), Data(), fmla())
+  type <- if (input$modType == "cox") {
+    "lp"
+  } else {
+    "link"
+  }
+  get.fitCI(input$nonlin, model(), Data(), fmla(), type = type)
 })
 
 
 # plot -----------------------------------------------------------------------------------------------------------------
-
 # dynamic height of the plot, depending on number of rows of plots
-myheight <- function(){
-  if(is.null(input$nonlin)){
+myheight <- function() {
+  if (is.null(input$nonlin)) {
     return(100)
-  }else{
+  } else {
     return(length(input$nonlin)*300)
   }
 }
 
 
-
-trans <- reactive({
-#   if(input$modType %in% c("lin", "log", "poi")){
-#     family(model())$linkinv
-#   }else{
-    function (eta)
-      eta
-#   }
-})
-
-
-ylab <- reactive({
-  if(is.null(fmla()))return(NULL)
-  function(x, nlin){
-    M <- list("lin" = paste("f(", nlin, ")", sep=""),
-         "log" = paste("Pr(", nlin, " = 1)", sep=""),
-         "poi" = paste("log(f(", nlin, "))", sep=""),
-         "cox" = paste("log(Hazard ratio)", sep="")
-         )
-      return(paste("f(", nlin, ")", sep=""))
-  }
-})
-
-
-
-helpfunc <- function(k){
-  if(length(input$nonlin)<1 | is.null(model())){
-    return("Please select variables to be fitted with splines.")
-  }else{
-    if(input$modType == "lin"){
-      if(input$plotResid){
-        yrange <- range(residuals(model()) + trans()(fitCI()[[k]][,"fit"]))
-      }else{yrange <- trans()(range(c(fitCI()[[k]][,c("lwr", "upr")])))}
-    }else{
-      yrange <- trans()(range(c(fitCI()[[k]][,c("lwr", "upr")])))
-    }
-    par(mfrow = c(1,1), mar=c(4.3, 4, 0.1, 0.1), bg="transparent")
-    plot(1, type="n", xlab=input$nonlin[k], ylab=ylab()(input$modType, input$nonlin[k]),
-         ylim = yrange,
-         xlim = range(Data()[,input$nonlin[k]]) + c(0.03,-0.03)*diff(range(Data()[,input$nonlin[k]])),
-         cex.lab=1, bg="transparent")
-
-    if(input$plotKnots){
-      abline(v=quantile(Data()[, input$nonlin[k]], c(0.05, c(1:(dfList()[[k]]-1))/dfList()[[k]], 0.95)), col=grey(0.5), lty=2)
-    }
-
-    polygon(c(fitCI()[[k]][,input$nonlin[k]], fitCI()[[k]][200:1, input$nonlin[k]]),
-            trans()(c(fitCI()[[k]][,"lwr"], fitCI()[[k]][200:1, "upr"])),
-            col="lightsteelblue1", border=NA)
-    if(input$modType == "lin"){
-      if(input$plotResid){
-        points(Data()[,input$nonlin[k]],
-               residuals(model()) + get.fitCI(input$nonlin, model(), Data(), fmla(), predx=Data()[, input$nonlin])[[k]][,"fit"],
-               col=grey(0.7), cex=0.2)
-      }
-    }
-    lines(fitCI()[[k]][,input$nonlin[k]], trans()(fitCI()[[k]][,"fit"]), lwd=3, col=AGEblue)#"royalblue4")
-    axis(side=1, at=Data()[,input$nonlin[k]], tck=0.02, labels=F)
-    box(which = "plot", bg="transparent")
-  }
-}
-
+# trans <- reactive({
+# #   if(input$modType %in% c("lin", "log", "poi")){
+# #     family(model())$linkinv
+# #   }else{
+#     function(eta)
+#       eta
+# #   }
+# })
 
 
 observe(
-  for(i in 1:length(input$nonlin)){
+  for (i in 1:length(input$nonlin)){
     local({
       myi <- i
-      plotname <- paste("plot", myi, sep="")
-      output[[plotname]] <- renderPlot(.myplot(), height=300, bg = "transparent")
+      plotname <- paste("plot", myi, sep = "")
+      output[[plotname]] <- renderPlot(.myplot(), height = 300, bg = "transparent")
 
-      .myplot <- reactive(helpfunc(k=myi))
+      type <- if (input$modType == "cox") {
+        "lp"
+      } else {
+        "link"
+      }
+
+
+      .myplot <- reactive(plotfunc(k = myi, predDF = fitCI(),
+                                   nonlin = input$nonlin, model = model(),
+                                   Dat = Data(), modType = input$modType,
+                                   plotResid = input$plotResid,
+                                   plotKnots = input$plotKnots,
+                                   quants = dfList(), type = type))
     })
   }
 )
@@ -346,15 +268,17 @@ observe(
 # create panel to check for overfitting --------------------------------------------------------------------------------
 output$overfit <- renderUI({
   wellPanel(
-    if(is.null(input$nonlin))return("No non-linear effects have been included in the model."),
-    if(is.null(model()))return(NULL),
+    if (is.null(input$nonlin))
+      return("No non-linear effects have been included in the model."),
+    if (is.null(model()))
+      return(NULL),
     HTML(paste(
     "<table>
       <tr>
       <td><b> Number of observations:</b></td>
-      <td style='text-align:right'> N=", nobs(model(), use.fallback=T), "</td>
+      <td style='text-align:right'> N=", nobs(model(), use.fallback = T), "</td>
       </tr>",
-    if(input$modType=='cox'){
+    if (input$modType == 'cox'){
       paste("<tr>
              <td><b> Number of events:</b></td>
              <td style='text-align:right'>", model()$nevent, "</td>
@@ -363,10 +287,10 @@ output$overfit <- renderUI({
       <tr>
       <td><b> Max. number of coefficients to avoid overfitting:</b></td>
       <td style='text-align:right'>",
-    if(input$modType=='lin'){floor(nobs(model())/10)},
-    if(input$modType=="log"){floor(min(table(Data()[,input$outcome]))/10)},
-    if(input$modType=="poi"){"???"},
-    if(input$modType=="cox"){floor(model()$nevent/10)},"
+    if (input$modType == 'lin'){floor(nobs(model())/10)},
+    if (input$modType == "log"){floor(min(table(Data()[,input$outcome]))/10)},
+    if (input$modType == "poi"){"???"},
+    if (input$modType == "cox"){floor(model()$nevent/10)},"
       </td>
       </tr>
       <tr>
