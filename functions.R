@@ -19,13 +19,14 @@ get.DF <- function(nlin, Dat, form, predx = NULL) {
 
   # set numerical variables to their median
   numvars <- sapply(Dat[, all.vars(as.formula(form))], is.numeric)
+
   if (sum(numvars) > 0) {
     l <- c(l, lapply(Dat[, names(numvars)[numvars], drop = F], median, na.rm = T))
   }
 
   # set categorical variables to their reference category
   if (sum(!numvars) > 0) {
-    l <- c(l, lapply(Dat[, names(numvars)[!numvars]], set.to.ref))
+    l <- c(l, lapply(Dat[, names(numvars)[!numvars], drop = F], set.to.ref))
   }
 
 
@@ -80,7 +81,7 @@ plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
     if (modType == "lin") {
       if (plotResid) {
         resids <- residuals(model) +
-          get.fitCI(nonlin, model, Dat, formula(model), type = type,
+          get.fitCI(nonlin, model, Dat, form = formula(model), type = type,
                     predx = Dat[, nonlin[k]])[[k]][,"fit"]
 
         yrange <- range(resids, predDF[[k]][,"fit"])
@@ -94,7 +95,7 @@ plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
     par(mfrow = c(1,1), mar = c(4.3, 4, 0.1, 0.1), mgp = c(2, 0.6, 0), bg = "transparent")
     plot(1, type = "n",
          xlab = nonlin[k], ylab = get_ylab(nonlin[k]),
-         ylim = yrange, xlim = range(Dat[, nonlin[k]]),# + c(0.03,-0.03)*diff(range(Data()[,nonlin[k]])),
+         ylim = yrange, xlim = range(Dat[, nonlin[k]]),
          cex.lab = 1, bg = "transparent")
 
     if (plotKnots) {
