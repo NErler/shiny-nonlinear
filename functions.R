@@ -14,8 +14,10 @@ set.to.ref <- function(x) {
 # predx: vector of values of the varying variable (necessary for residuals)
 get.DF <- function(nlin, Dat, form, predx = NULL) {
 
+  print("get.DF called!")
   # extract all relevant variable names
   l <- list()
+  print(length(l))
 
   # set numerical variables to their median
   numvars <- sapply(Dat[, all.vars(as.formula(form))], is.numeric)
@@ -23,11 +25,14 @@ get.DF <- function(nlin, Dat, form, predx = NULL) {
   if (sum(numvars) > 0) {
     l <- c(l, lapply(Dat[, names(numvars)[numvars], drop = F], median, na.rm = T))
   }
+  cat("length(l) after numeric: ", length(l), "\n")
 
   # set categorical variables to their reference category
   if (sum(!numvars) > 0) {
     l <- c(l, lapply(Dat[, names(numvars)[!numvars], drop = F], set.to.ref))
   }
+
+  cat("length(l) after catvars: ", length(l), "\n")
 
 
   if (is.null(predx)) {
@@ -37,6 +42,7 @@ get.DF <- function(nlin, Dat, form, predx = NULL) {
     l[[nlin]] <- predx
   }
   DF <- expand.grid(l)
+  print(dim(DF))
   return(DF)
 }
 
@@ -51,6 +57,7 @@ get.fitCI <- function(nonlin, mod, Dat, form, predx = NULL, type) {
   L <- as.list(nonlin)
   for (i in 1:length(nonlin)) {
     DF <- get.DF(nonlin[i], Dat, form, predx = predx)
+    print(names(DF))
     predCI <- predict(mod, DF, se.fit = T, type = type)
     predCI$lwr <- predCI$fit - 1.96 * predCI$se.fit
     predCI$upr <- predCI$fit + 1.96 * predCI$se.fit
@@ -74,6 +81,9 @@ get_ylab <- function(nlin){
 
 plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
                      plotResid, plotKnots, quants = NULL, type) {
+  print("Start plotting.")
+
+  cat(deparse(formula(model)))
 
   if (length(nonlin) < 1 | is.null(model)) {
     return("Please select variables to be fitted with splines.")
