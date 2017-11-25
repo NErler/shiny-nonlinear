@@ -14,19 +14,26 @@ set.to.ref <- function(x) {
 # predx: vector of values of the varying variable (necessary for residuals)
 get.DF <- function(nlin, Dat, form, predx = NULL) {
 
+  print("get.DF called!")
   # extract all relevant variable names
   l <- list()
+  print(length(l))
 
   # set numerical variables to their median
   numvars <- sapply(Dat[, all.vars(as.formula(form))], is.numeric)
+  print(numvars)
+
   if (sum(numvars) > 0) {
     l <- c(l, lapply(Dat[, names(numvars)[numvars], drop = F], median, na.rm = T))
   }
+  cat("length(l) after numeric: ", length(l), "\n")
 
   # set categorical variables to their reference category
   if (sum(!numvars) > 0) {
-    l <- c(l, lapply(Dat[, names(numvars)[!numvars]], set.to.ref))
+    l <- c(l, lapply(Dat[, names(numvars)[!numvars], drop = F], set.to.ref))
   }
+
+  cat("length(l) after catvars: ", length(l), "\n")
 
 
   if (is.null(predx)) {
@@ -36,6 +43,7 @@ get.DF <- function(nlin, Dat, form, predx = NULL) {
     l[[nlin]] <- predx
   }
   DF <- expand.grid(l)
+  print(dim(DF))
   return(DF)
 }
 
@@ -50,6 +58,7 @@ get.fitCI <- function(nonlin, mod, Dat, form, predx = NULL, type) {
   L <- as.list(nonlin)
   for (i in 1:length(nonlin)) {
     DF <- get.DF(nonlin[i], Dat, form, predx = predx)
+    print(names(DF))
     predCI <- predict(mod, DF, se.fit = T, type = type)
     predCI$lwr <- predCI$fit - 1.96 * predCI$se.fit
     predCI$upr <- predCI$fit + 1.96 * predCI$se.fit
@@ -73,6 +82,9 @@ get_ylab <- function(nlin){
 
 plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
                      plotResid, plotKnots, quants = NULL, type) {
+  print("Start plotting.")
+
+  cat(deparse(formula(model)))
 
   if (length(nonlin) < 1 | is.null(model)) {
     return("Please select variables to be fitted with splines.")
@@ -80,7 +92,7 @@ plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
     if (modType == "lin") {
       if (plotResid) {
         resids <- residuals(model) +
-          get.fitCI(nonlin, model, Dat, formula(model), type = type,
+          get.fitCI(nonlin, model, Dat, form = formula(model), type = type,
                     predx = Dat[, nonlin[k]])[[k]][,"fit"]
 
         yrange <- range(resids, predDF[[k]][,"fit"])
@@ -94,7 +106,7 @@ plotfunc <- function(k, predDF, nonlin, model, Dat, modType,
     par(mfrow = c(1,1), mar = c(4.3, 4, 0.1, 0.1), mgp = c(2, 0.6, 0), bg = "transparent")
     plot(1, type = "n",
          xlab = nonlin[k], ylab = get_ylab(nonlin[k]),
-         ylim = yrange, xlim = range(Dat[, nonlin[k]]),# + c(0.03,-0.03)*diff(range(Data()[,nonlin[k]])),
+         ylim = yrange, xlim = range(Dat[, nonlin[k]]),
          cex.lab = 1, bg = "transparent")
 
     if (plotKnots) {
